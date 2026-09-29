@@ -7,6 +7,8 @@ canvas.height = window.innerHeight;
 
 let gameOver = false;
 
+let score =0;
+
 const player ={
     x:375,
     y: 275,
@@ -135,6 +137,15 @@ function drawHealth(){
     ctx.fillText("Health: " + player.health, 20, 60);
 }
 
+function drawScore(){
+    ctx.fillStyle ="white";
+    ctx.font = "24px Arial";
+    ctx.textAlign = "right";
+    ctx.fillText("Score:" +score, canvas.width-10, 40);
+
+    ctx.textAlign = "left";
+}
+
 canvas.addEventListener("click", function() {
 
     const angle = getAngle();
@@ -165,6 +176,8 @@ function updateBullets() {
             const zombie = zombies[j];
 
             if (isColliding(bullet, zombie)) {
+
+                score += 10;
 
                 zombies.splice(j, 1);
 
@@ -279,7 +292,7 @@ function isColliding(a, b) {
     );
 }
 
-function draw(){
+function draw(){  
     ctx.clearRect(0,0,canvas.width, canvas.height);
     const angle = getAngle();
     ctx.fillStyle = player.color;
@@ -327,14 +340,12 @@ function gameLoop() {
         update();
         updateBullets();
         updateZombies();
-
         checkZombieCollision();
-
         draw();
         drawBullets();
         drawZombies();
         drawHealth();
-
+        drawScore();
     } else {
         drawGameOver();
     }
