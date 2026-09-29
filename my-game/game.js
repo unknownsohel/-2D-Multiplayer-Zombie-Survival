@@ -78,7 +78,7 @@ function spawnZombie(){
         y:0,
         width: 40,
         height: 40,
-        speed: 1
+        speed: 1+ Math.floor(score/50)*0.2
     };
     const side = Math.floor(Math.random()*4);
     if(side === 0){
@@ -102,7 +102,18 @@ function spawnZombie(){
     zombies.push(zombie);
 }
 
-setInterval(spawnZombie, 2000);
+function startSpawning() {
+    spawnZombie();
+
+    let delay = Math.max(
+        500,
+        2000 - Math.floor(score / 50) * 250
+    );
+
+    setTimeout(startSpawning, delay);
+}
+
+startSpawning();
 
 function checkZombieCollision() {
     for (let zombie of zombies) {
