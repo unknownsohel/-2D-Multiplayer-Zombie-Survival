@@ -8,18 +8,27 @@ canvas.height = window.innerHeight;
 let gameOver = false;
 
 let score =0;
+let wave = 1;
+let zombiesToSpawn = 5;
+let zombiesSpawned = 0;
+let waveInProgress = true;
+let waveMessage = true;
+let waveMessageTime = 0;
 
-const player ={
-    x:375,
+const player = {
+    x: 375,
     y: 275,
-    width: 50,
-    height: 50,
+    width: 30,
+    height: 30,
     speed: 5,
+    sprintSpeed: 8,
     health: 100,
+    stamina: 100,
+    maxStamina: 100,
     color: "blue",
     lastHit: 0,
     damageCooldown: 500
-}
+};
 
 const mouse = {
     x: 0,
@@ -28,14 +37,24 @@ const mouse = {
 
 const bullets = [];
 const zombies = [];
+const healthPacks = [];
 
-const zombie = {
-    x: 100,
-    y: 100,
-    width: 40,
-    height: 40,
-    speed: 1,
-};
+function spawnHealthPack() {
+
+    const healthPack = {
+        x: Math.random() * (canvas.width - 25),
+        y: Math.random() * (canvas.height - 25),
+        width: 25,
+        height: 25,
+        healAmount: 20,
+        createdAt: Date.now()
+    };
+
+    healthPacks.push(healthPack);
+}
+
+setInterval(spawnHealthPack, 10000);
+
 
 function updateZombies() {
 
@@ -55,7 +74,7 @@ function updateZombies() {
     }
 }
 
-zombies.push(zombie);
+
 
 function drawZombies() {
 
@@ -73,12 +92,13 @@ function drawZombies() {
 }
 
 function spawnZombie(){
-    const zombie ={
+    const zombie = {
         x: 0,
-        y:0,
+        y: 0,
         width: 40,
         height: 40,
-        speed: 1+ Math.floor(score/50)*0.2
+        speed: 1 + (wave - 1) * 0.2,
+        health: wave
     };
     const side = Math.floor(Math.random()*4);
     if(side === 0){
@@ -102,18 +122,42 @@ function spawnZombie(){
     zombies.push(zombie);
 }
 
-function startSpawning() {
-    spawnZombie();
+function startWave() {
+    zombiesToSpawn = 5 + (wave - 1) * 3;
+    zombiesSpawned = 0;
+    waveInProgress = true;
 
-    let delay = Math.max(
-        500,
-        2000 - Math.floor(score / 50) * 250
-    );
+    waveMessage = true;
+    waveMessageTime = Date.now();
 
-    setTimeout(startSpawning, delay);
+    spawnNextZombie();
 }
 
-startSpawning();
+function spawnNextZombie() {
+    if (zombiesSpawned < zombiesToSpawn) {
+        spawnZombie();
+        zombiesSpawned++;
+
+        setTimeout(spawnNextZombie, 1500);
+    }
+}
+
+function checkWaveProgress() {
+    if (
+        waveInProgress &&
+        zombiesSpawned === zombiesToSpawn &&
+        zombies.length === 0
+    ) {
+        waveInProgress = false;
+
+        setTimeout(function () {
+            wave++;
+            startWave();
+        }, 3000);
+    }
+}
+
+
 
 function checkZombieCollision() {
     for (let zombie of zombies) {
@@ -129,6 +173,68 @@ function checkZombieCollision() {
                     gameOver = true;
                 }
             }
+        }
+    }
+}
+
+function drawHealthPacks() {
+
+    for (let pack of healthPacks) {
+
+        const timeLeft = 5000 - (Date.now() - pack.createdAt);
+
+        if (timeLeft <= 2000) {
+
+            if (Math.floor(Date.now() / 200) % 2 === 0) {
+                continue;
+            }
+        }
+        ctx.fillStyle = "lime";
+        ctx.fillRect(
+            pack.x,
+            pack.y,
+            pack.width,
+            pack.height
+        );
+
+        ctx.fillStyle = "white";
+
+        ctx.fillRect(
+            pack.x + 5,
+            pack.y + 10,
+            15,
+            5
+        );
+
+        ctx.fillRect(
+            pack.x + 10,
+            pack.y + 5,
+            5,
+            15
+        );
+    }
+}
+
+function checkHealthPackCollision() {
+
+    for (let i = healthPacks.length - 1; i >= 0; i--) {
+
+        const pack = healthPacks[i];
+
+        if(Date.now() - pack.createdAt >= 5000){
+            healthPacks.splice(i,1);
+            continue;
+        }
+
+        if (isColliding(player, pack)) {
+
+            player.health += pack.healAmount;
+
+            if (player.health > 100) {
+                player.health = 100;
+            }
+
+            healthPacks.splice(i, 1);
         }
     }
 }
@@ -157,6 +263,29 @@ function drawScore(){
     ctx.textAlign = "left";
 }
 
+function drawWave() {
+    if (waveMessage) {
+
+        if (Date.now() - waveMessageTime < 2000) {
+
+            ctx.fillStyle = "white";
+            ctx.font = "40px Arial";
+            ctx.textAlign = "center";
+
+            ctx.fillText(
+                "WAVE " + wave,
+                canvas.width / 2,
+                100
+            );
+
+            ctx.textAlign = "left";
+
+        } else {
+            waveMessage = false;
+        }
+    }
+}
+
 canvas.addEventListener("click", function() {
 
     const angle = getAngle();
@@ -182,31 +311,37 @@ function updateBullets() {
         bullet.x += bullet.dx * bullet.speed;
         bullet.y += bullet.dy * bullet.speed;
 
+        let bulletHit = false;
+
         for (let j = zombies.length - 1; j >= 0; j--) {
 
             const zombie = zombies[j];
 
             if (isColliding(bullet, zombie)) {
 
-                score += 10;
-
-                zombies.splice(j, 1);
+                zombie.health--;
 
                 bullets.splice(i, 1);
+                bulletHit = true;
+
+                if (zombie.health <= 0) {
+                    score += 10;
+                    zombies.splice(j, 1);
+                }
 
                 break;
             }
         }
 
+        if (bulletHit) {
+            continue;
+        }
 
         if (
-            i < bullets.length &&
-            (
-                bullet.x < 0 ||
-                bullet.x > canvas.width ||
-                bullet.y < 0 ||
-                bullet.y > canvas.height
-            )
+            bullet.x < 0 ||
+            bullet.x > canvas.width ||
+            bullet.y < 0 ||
+            bullet.y > canvas.height
         ) {
             bullets.splice(i, 1);
         }
@@ -246,45 +381,56 @@ function getAngle() {
     return Math.atan2(dy, dx);
 }
 
-const keys ={};
-document.addEventListener("keydown",function(event){
-    keys[event.key] = true;
+const keys = {};
+
+document.addEventListener("keydown", function(event) {
+    keys[event.key.toLowerCase()] = true;
 });
 
-document.addEventListener("keyup", function(event){
-    keys[event.key] = false;
+document.addEventListener("keyup", function(event) {
+    keys[event.key.toLowerCase()] = false;
 });
 
-function update(){
-    if(keys["w"]){
-        player.y-=player.speed;
-    }
-    if(keys["s"]){
-        player.y+=player.speed;
-    }
-    if(keys["a"]){
-        player.x-=player.speed;
-    }
-    if(keys["d"]){
-        player.x+=player.speed;
+function update() {
+    let currentSpeed = player.speed;
+
+    const moving =
+    keys["w"] ||
+    keys["a"] ||
+    keys["s"] ||
+    keys["d"];
+
+    if (keys["shift"] && moving && player.stamina > 0) {
+        currentSpeed = player.sprintSpeed;
+
+        player.stamina -= 1;
+
+        if (player.stamina < 0) {
+            player.stamina = 0;
+        }
+    } else {
+        currentSpeed = player.speed;
+
+        if (player.stamina < player.maxStamina) {
+            player.stamina += 0.5;
+        }
     }
 
-    if(player.x<0){
-        player.x=0;
-    }
+   
+    if (keys["w"]) player.y -= currentSpeed;
+    if (keys["s"]) player.y += currentSpeed;
+    if (keys["a"]) player.x -= currentSpeed;
+    if (keys["d"]) player.x += currentSpeed;
 
-    if(player.x > canvas.width - player.width){
+    if (player.x < 0) player.x = 0;
+    if (player.x > canvas.width - player.width) {
         player.x = canvas.width - player.width;
     }
 
-    if(player.y<0){
-        player.y=0;
-    }
-
-    if(player.y > canvas.height - player.height){
+    if (player.y < 0) player.y = 0;
+    if (player.y > canvas.height - player.height) {
         player.y = canvas.height - player.height;
     }
-    
 }
 
 function isColliding(a, b) {
@@ -303,6 +449,27 @@ function isColliding(a, b) {
     );
 }
 
+function drawStamina() {
+
+    ctx.fillStyle = "gray";
+    ctx.fillRect(20, 70, 200, 15);
+
+    ctx.fillStyle = "cyan";
+    ctx.fillRect(
+        20,
+        70,
+        player.stamina * 2,
+        15
+    );
+
+    ctx.strokeStyle = "white";
+    ctx.strokeRect(20, 70, 200, 15);
+
+    ctx.fillStyle = "white";
+    ctx.font = "14px Arial";
+    ctx.fillText("Stamina", 20, 100);
+}
+
 function draw(){  
     ctx.clearRect(0,0,canvas.width, canvas.height);
     const angle = getAngle();
@@ -315,7 +482,7 @@ function draw(){
     );
     ctx.rotate(angle);
     ctx.fillStyle = "black";
-    ctx.fillRect(0, -5, 30, 10);
+    ctx.fillRect(0, -3, 20, 5);
     ctx.restore();
 }
 
@@ -352,11 +519,16 @@ function gameLoop() {
         updateBullets();
         updateZombies();
         checkZombieCollision();
+        checkHealthPackCollision();
+        checkWaveProgress();
         draw();
         drawBullets();
         drawZombies();
         drawHealth();
+        drawHealthPacks();
+        drawStamina();
         drawScore();
+        drawWave();
     } else {
         drawGameOver();
     }
@@ -364,5 +536,6 @@ function gameLoop() {
     requestAnimationFrame(gameLoop);
 }
 
+startWave();
 gameLoop();
 
