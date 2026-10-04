@@ -91,32 +91,79 @@ function drawZombies() {
     }
 }
 
-function spawnZombie(){
-    const zombie = {
-        x: 0,
-        y: 0,
-        width: 40,
-        height: 40,
-        speed: 1 + (wave - 1) * 0.2,
-        health: wave
-    };
-    const side = Math.floor(Math.random()*4);
-    if(side === 0){
-        zombie.x = Math.random()*canvas.width;
-        zombie.y = 0;
-    }
-    else if(side ===1){
-        zombie.x = Math.random()*canvas.width;
-        zombie.y = canvas.height- zombie.height;
-    }
-    else if(side ===2){
-        zombie.x =0;
-        zombie.y = Math.random()*canvas.height;
+function spawnZombie() {
+    const side = Math.floor(Math.random() * 4);
 
+    let x, y;
+
+    if (side === 0) {
+        x = Math.random() * canvas.width;
+        y = -40;
+    } else if (side === 1) {
+        x = canvas.width + 40;
+        y = Math.random() * canvas.height;
+    } else if (side === 2) {
+        x = Math.random() * canvas.width;
+        y = canvas.height + 40;
+    } else {
+        x = -40;
+        y = Math.random() * canvas.height;
     }
-    else{
-        zombie.x = canvas.width - zombie.width;
-        zombie.y = Math.random()*canvas.height;
+
+    const random = Math.random();
+
+    let type;
+
+    if (random < 0.7) {
+        type = "normal";
+    } else if (random < 0.9) {
+        type = "fast";
+    } else {
+        type = "tank";
+    }
+
+    let zombie;
+
+    if (type === "normal") {
+        zombie = {
+            x: x,
+            y: y,
+            width: 30,
+            height: 30,
+            speed: 1 + (wave - 1) * 0.2,
+            health: wave,
+            maxHealth: wave,
+            type: "normal",
+            color: "green"
+        };
+    }
+
+    if (type === "fast") {
+        zombie = {
+            x: x,
+            y: y,
+            width: 25,
+            height: 25,
+            speed: 2 + (wave - 1) * 0.2,
+            health: Math.max(1, wave - 1),
+            maxHealth: Math.max(1, wave - 1),
+            type: "fast",
+            color: "yellow"
+        };
+    }
+
+    if (type === "tank") {
+        zombie = {
+            x: x,
+            y: y,
+            width: 45,
+            height: 45,
+            speed: 0.6 + (wave - 1) * 0.1,
+            health: wave * 3,
+            maxHealth: wave * 3,
+            type: "tank",
+            color: "red"
+        };
     }
 
     zombies.push(zombie);
@@ -165,7 +212,18 @@ function checkZombieCollision() {
             let currentTime = Date.now();
 
             if (currentTime - player.lastHit >= player.damageCooldown) {
-                player.health -= 10;
+
+                let damage = 10;
+
+                if (zombie.type === "fast") {
+                    damage = 7;
+                }
+
+                if (zombie.type === "tank") {
+                    damage = 20;
+                }
+
+                player.health -= damage;
                 player.lastHit = currentTime;
 
                 if (player.health <= 0) {
@@ -395,39 +453,46 @@ function update() {
     let currentSpeed = player.speed;
 
     const moving =
-    keys["w"] ||
-    keys["a"] ||
-    keys["s"] ||
-    keys["d"];
+        keys["w"] ||
+        keys["a"] ||
+        keys["s"] ||
+        keys["d"];
 
     if (keys["shift"] && moving && player.stamina > 0) {
         currentSpeed = player.sprintSpeed;
 
-        player.stamina -= 1;
+        player.stamina -= 0.5;
 
-        if (player.stamina < 0) {
+        if (player.stamina <= 0) {
             player.stamina = 0;
+            currentSpeed = player.speed;
         }
-    } else {
+    }
+    else {
         currentSpeed = player.speed;
 
         if (player.stamina < player.maxStamina) {
-            player.stamina += 0.5;
+            player.stamina += 0.2;
+
+            if (player.stamina > player.maxStamina) {
+                player.stamina = player.maxStamina;
+            }
         }
     }
 
-   
     if (keys["w"]) player.y -= currentSpeed;
     if (keys["s"]) player.y += currentSpeed;
     if (keys["a"]) player.x -= currentSpeed;
     if (keys["d"]) player.x += currentSpeed;
 
     if (player.x < 0) player.x = 0;
+
     if (player.x > canvas.width - player.width) {
         player.x = canvas.width - player.width;
     }
 
     if (player.y < 0) player.y = 0;
+
     if (player.y > canvas.height - player.height) {
         player.y = canvas.height - player.height;
     }
