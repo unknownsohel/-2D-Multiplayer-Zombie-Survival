@@ -5,6 +5,14 @@ const ctx = canvas.getContext("2d");
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
+const startButton = document.querySelector("#start-button");
+const mainMenu = document.querySelector("#main-menu");
+startButton.addEventListener("click",function(){
+    mainMenu.style.display = "none";
+    startWave();
+    gameLoop();
+});
+
 let gameOver = false;
 
 let score =0;
@@ -56,38 +64,81 @@ function spawnHealthPack() {
 setInterval(spawnHealthPack, 10000);
 
 
+
+
 function updateZombies() {
-
-    for (let i = 0; i < zombies.length; i++) {
-
-        const zombie = zombies[i];
-
+    for (let zombie of zombies) {
         const dx = player.x - zombie.x;
         const dy = player.y - zombie.y;
 
         const distance = Math.sqrt(dx * dx + dy * dy);
 
-        if(distance >0){
-            zombie.x += (dx / distance) * zombie.speed;
-            zombie.y += (dy / distance) * zombie.speed;
+        if (distance > 0) {
+            let currentSpeed = zombie.speed;
+
+            if (zombie.type === "fast") {
+                const now = Date.now();
+
+                if (!zombie.isDashing && now - zombie.lastDash >= 3000) {
+                    zombie.isDashing = true;
+                    zombie.dashStarted = now;
+                }
+
+                if (zombie.isDashing) {
+                    currentSpeed = zombie.speed * 2;
+
+                    if (now - zombie.dashStarted >= 300) {
+                        zombie.isDashing = false;
+                        zombie.lastDash = now;
+                    }
+                }
+            }
+
+            zombie.x += (dx / distance) * currentSpeed;
+            zombie.y += (dy / distance) * currentSpeed;
         }
     }
 }
 
 
 
+
 function drawZombies() {
-
-    ctx.fillStyle = "red";
-
-    for (let i = 0; i < zombies.length; i++) {
+    for (let zombie of zombies) {
+        if (zombie.type === "fast" && zombie.isDashing) {
+            ctx.fillStyle = "orange";
+        } else {
+            ctx.fillStyle = zombie.color;
+        }
 
         ctx.fillRect(
-            zombies[i].x,
-            zombies[i].y,
-            zombies[i].width,
-            zombies[i].height
+            zombie.x,
+            zombie.y,
+            zombie.width,
+            zombie.height
         );
+
+        if (zombie.type === "tank") {
+            const barWidth = zombie.width;
+            const barHeight = 5;
+            const healthPercent = zombie.health / zombie.maxHealth;
+
+            ctx.fillStyle = "black";
+            ctx.fillRect(
+                zombie.x,
+                zombie.y - 10,
+                barWidth,
+                barHeight
+            );
+
+            ctx.fillStyle = "lime";
+            ctx.fillRect(
+                zombie.x,
+                zombie.y - 10,
+                barWidth * healthPercent,
+                barHeight
+            );
+        }
     }
 }
 
@@ -130,8 +181,8 @@ function spawnZombie() {
             y: y,
             width: 30,
             height: 30,
-            speed: 1 + (wave - 1) * 0.2,
-            health: wave,
+            speed: 0.5 + (wave - 1) * 0.2,
+            health: 1 +((wave-1)/2),
             maxHealth: wave,
             type: "normal",
             color: "green"
@@ -144,11 +195,13 @@ function spawnZombie() {
             y: y,
             width: 25,
             height: 25,
-            speed: 2 + (wave - 1) * 0.2,
+            speed: 1 + (wave - 1) * 0.2,
             health: Math.max(1, wave - 1),
             maxHealth: Math.max(1, wave - 1),
             type: "fast",
-            color: "yellow"
+            color: "yellow",
+            lastDash: Date.now(),
+            isDashing: false
         };
     }
 
@@ -158,9 +211,9 @@ function spawnZombie() {
             y: y,
             width: 45,
             height: 45,
-            speed: 0.6 + (wave - 1) * 0.1,
-            health: wave * 3,
-            maxHealth: wave * 3,
+            speed: 0.4 + (wave - 1) * 0.05,
+            health: wave * 2,
+            maxHealth: wave * 2,
             type: "tank",
             color: "red"
         };
@@ -383,7 +436,18 @@ function updateBullets() {
                 bulletHit = true;
 
                 if (zombie.health <= 0) {
-                    score += 10;
+                    if (zombie.type === "normal") {
+                        score += 10;
+                    }
+
+                    if (zombie.type === "fast") {
+                        score += 20;
+                    }
+
+                    if (zombie.type === "tank") {
+                        score += 30;
+                    }
+                    
                     zombies.splice(j, 1);
                 }
 
@@ -601,6 +665,5 @@ function gameLoop() {
     requestAnimationFrame(gameLoop);
 }
 
-startWave();
-gameLoop();
+
 

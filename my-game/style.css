@@ -14,3 +14,60 @@ body {
 canvas {
     display: block;
 }
+
+
+#main-menu {
+    position: fixed;
+    inset: 0;
+    background: #101510;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 10;
+    font-family: Arial, sans-serif;
+}
+
+#main-menu h1 {
+    font-size: 42px;
+    color: lime;
+}
+
+#start-button {
+    padding: 15px 35px;
+    margin: 20px;
+    background: darkred;
+    color: white;
+    border: 2px solid white;
+    border-radius: 8px;
+    font-size: 20px;
+    cursor: pointer;
+}
+
+#start-button:hover {
+    background: red;
+    transform: scale(1.05);
+}
+
+#pause-menu {
+    font-size:42px;
+    color: lime;
+}
+
+#resume-button{
+    padding: 15px 35px;
+    margin: 20px;
+    background: darkblue;
+    color: white;
+    border: 2px solid white;
+    border-radius: 8px;
+    font-size: 20px;
+    cursor: pointer;
+}
+
+#resume-button:hover{
+    background-color: red;
+    transform:scale(1.05);
+}
+
