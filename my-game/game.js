@@ -5,14 +5,76 @@ const ctx = canvas.getContext("2d");
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
+
 const startButton = document.querySelector("#start-button");
 const mainMenu = document.querySelector("#main-menu");
-startButton.addEventListener("click",function(){
+
+let lastShotTime = Date.now();
+let noBulletShot = 0;
+const shootingCoolDown =10000;
+const currentTime = Date.now();
+
+canvas.addEventListener("click", function() {
+    console.log("Bullet count:", noBulletShot);
+    const currentTime = Date.now();
+    if(noBulletShot >= 30){
+        if(currentTime - lastShotTime < shootingCoolDown ){
+            console.log("Reloading...");
+            return;
+        }
+        noBulletShot =0;
+        lastShotTime = currentTime;
+    }
+    const angle = getAngle();
+
+    const bullet = {
+        x: player.x + player.width / 2,
+        y: player.y + player.height / 2,
+        speed: 10,
+        dx: Math.cos(angle),
+        dy: Math.sin(angle),
+        size: 5
+    };
+    noBulletShot++;
+
+    bullets.push(bullet);
+    
+});
+
+
+
+let gameStarted = false;
+
+function startGame() {
+    if (gameStarted) return;
+
+    gameStarted = true;
     mainMenu.style.display = "none";
     startWave();
     gameLoop();
+}
+
+startButton.addEventListener("click", startGame);
+
+const pauseMenu = document.querySelector("#pause-menu");
+const resumeButton = document.querySelector("#resume-button");
+
+let isPaused = false;
+
+document.addEventListener("keydown", function (event) {
+    if(event.key !== "Escape") return;
+    if (!gameStarted) {
+        startGame();
+    } else {
+        isPaused = !isPaused;
+        pauseMenu.style.display = isPaused ? "flex" : "none";
+    }
 });
 
+resumeButton.addEventListener("click", function (event){
+    pauseMenu.style.display ="none";
+    isPaused = !isPaused;
+});
 let gameOver = false;
 
 let score =0;
@@ -397,21 +459,21 @@ function drawWave() {
     }
 }
 
-canvas.addEventListener("click", function() {
+// canvas.addEventListener("click", function() {
 
-    const angle = getAngle();
+//     const angle = getAngle();
 
-    const bullet = {
-        x: player.x + player.width / 2,
-        y: player.y + player.height / 2,
-        speed: 10,
-        dx: Math.cos(angle),
-        dy: Math.sin(angle),
-        size: 5
-    };
+//     const bullet = {
+//         x: player.x + player.width / 2,
+//         y: player.y + player.height / 2,
+//         speed: 10,
+//         dx: Math.cos(angle),
+//         dy: Math.sin(angle),
+//         size: 5
+//     };
 
-    bullets.push(bullet);
-});
+//     bullets.push(bullet);
+// });
 
 function updateBullets() {
 
@@ -643,6 +705,10 @@ function drawGameOver() {
 }
 
 function gameLoop() {
+    if (isPaused) {
+        requestAnimationFrame(gameLoop);
+        return;
+    }
     if (!gameOver) {
         update();
         updateBullets();
