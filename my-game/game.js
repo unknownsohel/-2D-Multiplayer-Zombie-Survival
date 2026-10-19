@@ -9,22 +9,25 @@ canvas.height = window.innerHeight;
 const startButton = document.querySelector("#start-button");
 const mainMenu = document.querySelector("#main-menu");
 
-let lastShotTime = Date.now();
-let noBulletShot = 0;
-const shootingCoolDown =10000;
-const currentTime = Date.now();
+const MAX_BULLETS = 30;
+const reloadTime = 10000;
 
-canvas.addEventListener("click", function() {
-    console.log("Bullet count:", noBulletShot);
+let noBulletShot = 0;
+let reloadStartTime = 0;
+let isReloading = false;
+
+canvas.addEventListener("click", function () {
     const currentTime = Date.now();
-    if(noBulletShot >= 30){
-        if(currentTime - lastShotTime < shootingCoolDown ){
+
+    if (isReloading) {
+        if (currentTime - reloadStartTime < reloadTime) {
             console.log("Reloading...");
             return;
         }
-        noBulletShot =0;
-        lastShotTime = currentTime;
+        isReloading = false;
+        noBulletShot = 0;
     }
+
     const angle = getAngle();
 
     const bullet = {
@@ -35,10 +38,14 @@ canvas.addEventListener("click", function() {
         dy: Math.sin(angle),
         size: 5
     };
-    noBulletShot++;
 
     bullets.push(bullet);
-    
+    noBulletShot++;
+    console.log("Bullet count:", noBulletShot);
+    if (noBulletShot >= MAX_BULLETS) {
+        isReloading = true;
+        reloadStartTime = currentTime;
+    }
 });
 
 
