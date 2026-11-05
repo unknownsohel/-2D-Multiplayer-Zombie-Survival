@@ -4,8 +4,11 @@ A browser-based 2D zombie survival shooter built using **HTML, CSS, JavaScript, 
 
 Survive endless waves of zombies, manage your health and stamina, collect health packs, and see how long you can stay alive!
 
-      https://unknownsohel.github.io/-2D-Multiplayer-Zombie-Survival/
-                       🎮 PLAY THE GAME
+<p align="center">
+  <a href="https://unknownsohel.github.io/-2D-Multiplayer-Zombie-Survival/">
+    <strong>🎮 PLAY THE GAME</strong>
+  </a>
+</p>
 
 ---
 
