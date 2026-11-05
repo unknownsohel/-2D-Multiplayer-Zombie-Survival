@@ -10,7 +10,7 @@ const startButton = document.querySelector("#start-button");
 const mainMenu = document.querySelector("#main-menu");
 
 const MAX_BULLETS = 30;
-const reloadTime = 10000;
+const reloadTime = 5000;
 
 let noBulletShot = 0;
 let reloadStartTime = 0;
@@ -466,21 +466,6 @@ function drawWave() {
     }
 }
 
-// canvas.addEventListener("click", function() {
-
-//     const angle = getAngle();
-
-//     const bullet = {
-//         x: player.x + player.width / 2,
-//         y: player.y + player.height / 2,
-//         speed: 10,
-//         dx: Math.cos(angle),
-//         dy: Math.sin(angle),
-//         size: 5
-//     };
-
-//     bullets.push(bullet);
-// });
 
 function updateBullets() {
 
